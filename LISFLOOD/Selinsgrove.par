@@ -1,0 +1,14 @@
+resroot	run10
+dirroot	results
+sim_time	100000.0
+initial_tstep	2.0
+DEMfile	dem0.507821714940364.asc
+fpfric	0.330938612747594
+riverfile	Selinsgrove.river
+saveint	100000.0
+fv1	
+cuda	
+elevoff	
+depthoff	
+adaptoff	
+chainageoff	
