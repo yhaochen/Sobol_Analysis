@@ -1,31 +1,3 @@
-##==============================================================================
-##
-## Goal: 
-##       Reads sensitivity indices saved in last step. Then it will plots the radial plots 
-##       for the most likely scenario (trend model with HAZUS)
-## Outputs:
-##      A pdf or jpeg file in "Figures" directory that contains the radial plot
-##
-## Authors: Mahkameh Zarekarizi (mahkameh.zare@gmail.com) 
-##==============================================================================
-## Copyright 2019 Mahkameh Zarekarizi
-## This file is free software: you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation, either version 3 of the License, or
-## (at your option) any later version.
-##
-## This file is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
-## You should have received a copy of the GNU General Public License
-## along with this file.  If not, see <http://www.gnu.org/licenses/>.
-##==============================================================================
-## Instructions to run:
-## 1. If you have not already done so, change the working directory to the main 
-##    folder (Zarekarizi-Home-Elevation) and run the script 
-##==============================================================================
 
 wd<-getwd() #Gets the current directory 
 setwd(wd)
