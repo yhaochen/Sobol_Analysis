@@ -85,7 +85,6 @@ median.rt <- function(obs){
 load("./GEV_Parameters_MCMC.RData")
 load("./annual_maxima_cms.RData")
 load('./GEV_Parameters.RData')
-load('./GEV_Posterior_Mean.RData')
 
 library(evir)
 plot_rps <- c(seq(1,2,0.1),seq(3,9,1),seq(10,90,10),seq(100,500,100))
