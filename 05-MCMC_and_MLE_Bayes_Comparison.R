@@ -1,6 +1,7 @@
 ##==============================================================================
 ##
-## Script estimates GEV distribution parameters using MCMC 
+## Script estimates GEV distribution parameters using MCMC and generates discharge
+## samples for the Sobol analysis
 ##
 ## Authors: Iman Hosseini-Shakib (ishakib@gmail.com)
 ##          Klaus Keller (kzk10@psu.edu)
@@ -34,13 +35,11 @@
 ##         setwd("~/../MAIN_FOLDER") 
 ## 2. To Run:
 ##      1. Click on Source button or, on console, type: Source("../../....R")
-## 3. Outputs:
-##      1. output includes a data file MCMC_Discharge_CMS.RData
 ##==============================================================================
 
 wd<-getwd()
 setwd(wd)
-load("annual_maxima_cms.RData")
+load("annual_maxima_cms.RData") #annual maxima of discharge in cms
 library(extRemes)
 
 ####################################################################################################
@@ -61,8 +60,7 @@ GEV_params=c(location,scale,shape)
 GEV_params
 save(GEV_params,file="GEV_Parameters.RData")
 GEV_mle<-ci(fit, alpha = 0.05, type = c("parameter")) # From the fExtremes Packages
-# location        scale        shape 
-# 5056.1595463 1619.6022021    0.1927981 
+
 save(GEV_mle,file="GEV_MLE.RData")
 
 ####################################################################################################
@@ -145,7 +143,7 @@ gamma.mcmc = 0.7										# rate of adaptation (between 0.5 and 1, lower is fast
 burnin = round(niter.mcmc*0.5)				# how much to remove for burn-in
 dat=annu_max_Q[,2]
 # Run MCMC algorithm
-par.init<-c(GEV_params[1],log(GEV_params[2]),GEV_params[3])
+par.init<-c(GEV_est_MAP[1],log(GEV_est_MAP[2]),GEV_est_MAP[3])
 
 amcmc.out = MCMC(p=lposterior, n=niter.mcmc, init=par.init, adapt=TRUE, 
                  acc.rate=accept.mcmc,
@@ -177,14 +175,14 @@ hpd <- function(samp,p=0.05){
 }
 
 ######################################
-bayesEstimator<-apply(mcmcSamples,2,function(x){c(mean(x), hpd(x))})
-rownames(bayesEstimator)<-c("Posterior Mean" , "95%CI-Low", "95%CI-High")
-# Results from Bayesian Approach (MCMC)
-bayesEstimator
-save(bayesEstimator,file="./GEV_Posterior_Mean.RData")
-
-# Results from MLE Approach
-GEV_mle
+# bayesEstimator<-apply(mcmcSamples,2,function(x){c(mean(x), hpd(x))})
+# rownames(bayesEstimator)<-c("Posterior Mean" , "95%CI-Low", "95%CI-High")
+# # Results from Bayesian Approach (MCMC)
+# bayesEstimator
+# save(bayesEstimator,file="./GEV_Posterior_Mean.RData")
+# 
+# # Results from MLE Approach
+# GEV_mle
 
 # Comparative plots for the results
 library(evd)
@@ -217,9 +215,9 @@ colnames(discharge_df)<-c('discharge_cms')
 save(discharge_df,file="./MCMC_Discharge_CMS.RData")
 #Taking random sample data from MCMC results
 N=2000
-set.seed(20)
+set.seed(1)
 Q_samp_A<-sample(discharge_df[,1],N)
-set.seed(59)
+set.seed(91)
 Q_samp_B<-sample(discharge_df[,1],N)
 save(Q_samp_A,file='./Q_sample_A.RData')
 save(Q_samp_B,file='./Q_sample_B.RData')

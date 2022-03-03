@@ -53,8 +53,6 @@ myblue<-rgb(0.68, 0.85, 0.90,0.5)
 load("./annual_maxima_cms.RData") # Annual maxima of discharge in cms
 load("./GEV_Parameters.RData") # Frequentist maximum likelihood GEV parameter set
 load("./GEV_Parameters_MCMC.RData") # MCMC parameter sets
-load('./GEV_Posterior_Mean.RData') # posterior mean gev 
-load('./GEV_Max_a_Posteriori.RData') # maximum a posteriori gev
 load('./Q_sample_A.RData') # sampled discharge data
 
 pdf_fun <- function(x,mu,sigma,xi){
@@ -80,33 +78,12 @@ cdf_annu_Q<-ecdf(annu_Q_order)
 surv_annu_Q<-1-cdf_annu_Q(annu_Q_order)
 
 #Maximum Likelihood GEV 
-# MLE_Q<-dgev(plot_Qs[1]:Q500,mu=GEV_params[1],sigma=GEV_params[2],
-#             xi=GEV_params[3]) # discharge densities based on the maximum likelihood GEV
-# surv_mle<- sapply(plot_Qs[1]:Q500, function (x){1-cdf_fun(x,
-#                   mu=GEV_params[1],sigma=GEV_params[2],xi=GEV_params[3])})
-
-
-#Bayesian postrior mean GEV 
-mean_Bayes_Q<-dgev(min(plot_Qs):max(plot_Qs),mu=bayesEstimator[1,1],sigma=bayesEstimator[1,2],
-            xi=bayesEstimator[1,3])
-mean_surv_bayes<- sapply(min(plot_Qs):max(plot_Qs), function (x){1-cdf_fun(x,
-                         mu=bayesEstimator[1,1],sigma=bayesEstimator[1,2],
-                         xi=bayesEstimator[1,3])})
-
-#Bayesian maximum a posteriori GEV 
-
-max_Bayes_Q<-dgev(min(plot_Qs):max(plot_Qs),mu=GEV_est_MAP[1],sigma=GEV_est_MAP[2],
-              xi=GEV_est_MAP[3])
-max_surv_bayes<- sapply(min(plot_Qs):max(plot_Qs), function (x){1-cdf_fun(x,
-                                                            mu=GEV_est_MAP[1],sigma=GEV_est_MAP[2],xi=GEV_est_MAP[3])})
-#Sampled discharge
-sample_Q<-sort(Q_samp_A) # 2000 samples from MCMC results
-pdf_sample_Q<-density(sample_Q)
-cdf_sample_Q<-ecdf(sample_Q)
-surv_sample_Q<-1-cdf_sample_Q(sample_Q)
+MLE_Q<-dgev(min(plot_Qs):max(plot_Qs),mu=GEV_params[1],sigma=GEV_params[2],
+            xi=GEV_params[3]) # discharge densities based on the maximum likelihood GEV
+surv_mle<- sapply(min(plot_Qs):max(plot_Qs), function (x){1-cdf_fun(x,
+                  mu=GEV_params[1],sigma=GEV_params[2],xi=GEV_params[3])})
 
 #MCMC Discharge
-
 
 PDF<-sapply(1:nrow(mcmcSamples), function(x) {
   pdf_fun(plot_Qs, mu=mcmcSamples[x,1], sigma=mcmcSamples[x,2], xi=mcmcSamples[x,3])
@@ -124,6 +101,23 @@ CDF[is.nan(CDF)] <- 1e-20
 rownames(CDF)<-plot_Qs
 save(CDF,file='./discharge_uncertainty_cdf.RData')
 #load('./discharge_uncertainty_cdf.RData')
+
+#Bayesian posterior mean  
+mean_Bayes_Q<-sapply(1:length(plot_Qs), function(x){mean(PDF[x,])})
+mean_surv_bayes<- sapply(1:length(plot_Qs), function(x){1-mean(CDF[x,])})
+
+#Bayesian maximum a posteriori GEV 
+
+# max_Bayes_Q<-dgev(min(plot_Qs):max(plot_Qs),mu=GEV_est_MAP[1],sigma=GEV_est_MAP[2],
+#               xi=GEV_est_MAP[3])
+# max_surv_bayes<- sapply(min(plot_Qs):max(plot_Qs), function (x){1-cdf_fun(x,
+#                                                             mu=GEV_est_MAP[1],sigma=GEV_est_MAP[2],xi=GEV_est_MAP[3])})
+#Sampled discharge
+sample_Q<-sort(Q_samp_A) # 2000 samples from MCMC results
+pdf_sample_Q<-density(sample_Q)
+cdf_sample_Q<-ecdf(sample_Q)
+surv_sample_Q<-1-cdf_sample_Q(sample_Q)
+
 
  # Find upper and lower density limits of MCMC discharge data
 lower_5 <- sapply(1:length(plot_Qs), function (x){quantile(PDF[x,],0.05)})
@@ -150,8 +144,8 @@ plot(histogram, freq=F,xlim = c(xmin,xmax),xaxt="n",xaxs="i",yaxs="i",
      ylim = c(ymin,ymax),yaxt="n",main="",xlab = "",ylab="")
 
 # Axes 
-axis(1,pos=ymin, at=seq(0,xmax,5000),labels=formatC(seq(0,xmax,5000), format="d", big.mark=','),cex.axis=1,lwd=0.9)
-axis(2, pos=xmin,at = c(0,round(max(upper_95),5)),labels=c(0,"0.0004"),lwd=0.9,cex.axis=1)
+axis(1,pos=ymin, at=seq(0,xmax,5000),labels=formatC(seq(0,xmax,5000), format="d", big.mark=','),cex.axis=1.5,lwd=1)
+axis(2, pos=xmin,at = c(0,round(max(upper_95),5)),labels=c(0,"0.0004"),lwd=1,cex.axis=1.5)
 
 # x and y axis labels 
 mtext(expression("Discharge (m"^3*"/s)"),side=1,line=3,cex=0.8)
@@ -170,12 +164,13 @@ polygon(x = c(plot_Qs,rev(plot_Qs)),
 
 # MLE PDF and samples PDF
 
-lines(min(plot_Qs):max(plot_Qs),max_Bayes_Q,lty=1,col="red",lwd=2)
-lines(min(plot_Qs):max(plot_Qs),mean_Bayes_Q,lty=1,col="blue",lwd=2)
-lines(pdf_sample_Q$x[-(1:19)],pdf_sample_Q$y[-(1:19)] ,lty=2,col="green",lwd=2)
+lines(min(plot_Qs):max(plot_Qs),MLE_Q,lty=1,col="red",lwd=2)
+lines(plot_Qs,mean_Bayes_Q,lty=1,col="blue",lwd=2)
+# lines(pdf_sample_Q$x[-(1:19)],pdf_sample_Q$y[-(1:19)] ,lty=2,col="green",lwd=2)
+lines(pdf_sample_Q$x,pdf_sample_Q$y ,lty=2,col="green",lwd=2)
 # Legend
 legend(12000,ymax-ymax*0.01,
-       c("Maximum a posteriori","Posterior mean","Sampled discharge","90% C.I. uncertainty area","Observed annual maxima of discharge"),
+       c("Frequentist max. likelihood","Posterior mean","Sampled discharge","90% C.I. uncertainty area","Observed annual maxima of discharge"),
        col = c('red','blue','green',myblue,'black'),
        pt.bg = c(NA,NA,NA, myblue,"white"),
        pch = c(NA,NA,NA, 22,22),
@@ -201,12 +196,12 @@ xmin=0
 xmax=max(plot_Qs)
 
 # The base plot
-plot(min(plot_Qs):max(plot_Qs),max_surv_bayes, xlim = c(xmin,xmax),pch=NA,xaxt="n",xaxs="i",yaxs="i",
+plot(plot_Qs,mean_surv_bayes, xlim = c(xmin,xmax),pch=NA,xaxt="n",xaxs="i",yaxs="i",
      ylim = c(ymin,ymax),yaxt="n",main="",xlab = "",ylab="",log = "y")
 
 # Axes 
-axis(1,pos=ymin, at=seq(0,xmax,5000),labels=formatC(seq(0,xmax,5000), format="d", big.mark=','),cex.axis=1,lwd=0.9)
-axis(2, pos=xmin,lwd=0.9,cex.axis=1)
+axis(1,pos=ymin, at=seq(0,xmax,5000),labels=formatC(seq(0,xmax,5000), format="d", big.mark=','),cex.axis=1.5,lwd=1)
+axis(2, pos=xmin,lwd=1,cex.axis=1.5)
 
 # x and y axis labels 
 mtext(expression("Discharge (m"^3*"/s)"),side=1,line=3,cex=0.8)
@@ -224,14 +219,14 @@ polygon(x = c(plot_Qs,rev(plot_Qs)),
         border = NA , col=myblue)
 
 # MLE PDF
-lines(min(plot_Qs):max(plot_Qs),max_surv_bayes,lty=1,col="red",lwd=2)
-lines(min(plot_Qs):max(plot_Qs),mean_surv_bayes,lty=1,col="blue",lwd=2)
+lines(min(plot_Qs):max(plot_Qs),surv_mle,lty=1,col="red",lwd=2)
+lines(plot_Qs,mean_surv_bayes,lty=1,col="blue",lwd=2)
 lines(sample_Q,surv_sample_Q,lty=2,col="green",lwd=2)
 points(annu_Q_order,surv_annu_Q,pch=16)
 
 # Legend
 legend(12000,1.5,
-       c("Maximum a posteriori","Posterior mean","Sampled discharge","90% C.I. uncertainty area","Observed annual maxima of discharge"),
+       c("Frequentist max. likelihood","Posterior mean","Sampled discharge","90% C.I. uncertainty area","Observed annual maxima of discharge"),
        col = c('red','blue','green',myblue,'black'),
        pt.bg = c(NA,NA,NA, myblue,"white"),
        pch = c(NA,NA,NA, 22,16),
