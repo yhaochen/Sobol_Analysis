@@ -155,6 +155,21 @@ mcmcSamples[,2]<-exp(mcmcSamples[,2])
 save(mcmcSamples,file="./GEV_Parameters_MCMC.RData")
 
 #####################################
+# Check for the convergence of MCMC parameters
+source("batchmeans.R") # Load helper functions
+summaryMCMC<-bmmat(mcmcSamples) # Computes the batch means standard error for mcmc Chain
+summaryMCMC<-cbind(summaryMCMC,abs(summaryMCMC[,1]*0.01))
+# rows pertain to the GEV parameters - location, scale, and shape
+# columns refer to (1) sample mean;  (2) batch means standard error; and (3) 1% of the sample mean
+
+# One way to check convergence of the mcmc chain is to see if the batch means standard error is 
+# less than 1% of the absolute sample mean
+summaryMCMC[,2]<summaryMCMC[,3]
+
+# V1   V2   V3 
+# TRUE TRUE TRUE 
+
+#####################################
 # Highest Posterior Density Function
 ## Using Ming-Hui Chen's paper in Journal of Computational and Graphical Stats.
 hpd <- function(samp,p=0.05){
