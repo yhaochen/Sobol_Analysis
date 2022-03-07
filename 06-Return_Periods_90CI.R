@@ -7,7 +7,7 @@
 ##          Klaus Keller (kzk10@psu.edu)
 ##
 ##  Modified from a code by Mahkameh Zarekarizi available at:
-## https://github.com/scrim-network/Zarekarizi-flood-home-elavate/blob/master/Source_Code/S10_Estimate_MCMC.R
+## https://github.com/scrim-network/Zarekarizi-flood-home-elavate/blob/master/Source_Code/S11_Return_Level.R
 ##==============================================================================
 ## Copyright 2022 Iman Hosseini-Shakib
 ## This file is free software: you can redistribute it and/or modify
@@ -80,11 +80,12 @@ median.rt <- function(obs){
   out <- sort(1/prob, decreasing = FALSE)
   return(out)
 }
+
 #---------------------------------------------------------------------
 # Load libraries and data required to run this code
-load("./GEV_Parameters_MCMC.RData")
-load("./annual_maxima_cms.RData")
-load('./GEV_Parameters.RData')
+load("./annual_maxima_cms.RData") # Annual maxima of discharge in cms
+load("./GEV_Parameters.RData") # Frequentist maximum likelihood GEV parameter set
+load("./GEV_Parameters_MCMC.RData") # MCMC parameter sets
 
 library(evir)
 plot_rps <- c(seq(1,2,0.1),seq(3,9,1),seq(10,90,10),seq(100,500,100))
@@ -159,8 +160,8 @@ points(median.rt(sort(annu_max_Q[,2])), sort(annu_max_Q[,2]), lwd = 1, cex = 0.7
 
 # Legend
 legend(2,ymax-ymax*0.01,
-       c("Frequentist max. likelihood","Posterior mean",
-         "90% C.I. uncertainty area","Observed annual maxima of discharge"),
+       c("Maximum likelihood (frequentist)","Posterior mean (Bayesian)",
+         "90% credible interval (uncertainty)","Observed annual maxima of discharge"),
        col = c('red',"blue", myblue,'black'),
        pt.bg = c(NA, NA, myblue,"white"),
        pch = c(NA, NA, 22,20),

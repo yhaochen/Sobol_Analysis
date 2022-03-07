@@ -7,7 +7,7 @@
 ##          Klaus Keller (kzk10@psu.edu)
 ##
 ##  Modified from a code by Mahkameh Zarekarizi available at:
-## https://github.com/scrim-network/Zarekarizi-flood-home-elavate/blob/master/Source_Code/S10_Estimate_MCMC.R
+## https://github.com/scrim-network/Zarekarizi-flood-home-elavate/blob/master/Source_Code/S11_Return_Level.R
 ##==============================================================================
 ## Copyright 2022 Iman Hosseini-Shakib
 ## This file is free software: you can redistribute it and/or modify
@@ -61,12 +61,21 @@ pdf_fun <- function(x,mu,sigma,xi){
   return(d)
 }
 
+# # GEV CDF function
+# cdf_fun<- function(x,mu,sigma,xi) {
+#   if(xi!=0) t<-(1+xi*((x-mu)/sigma))^(-1/xi) else t<-exp(-(x-mu)/sigma)
+#   cd<-exp(-t)
+#   return(cd)
+# }
+
 # GEV CDF function
 cdf_fun<- function(x,mu,sigma,xi) {
-  if(xi!=0) t<-(1+xi*((x-mu)/sigma))^(-1/xi) else t<-exp(-(x-mu)/sigma)
-  cd<-exp(-t)
+  library(evir)
+  cd<-pgev(x,mu=mu,sigma=sigma,xi=xi)
   return(cd)
 }
+
+#---------------------------------------------------------------------
 
 plot_Qs <- c(seq(1000,35000,500)) # discharge values of axis x 
 
@@ -123,7 +132,7 @@ surv_sample_Q<-1-cdf_sample_Q(sample_Q)
 lower_5 <- sapply(1:length(plot_Qs), function (x){quantile(PDF[x,],0.05)})
 upper_95 <- sapply(1:length(plot_Qs), function (x) {quantile(PDF[x,],0.95)})
 surv_lower_5 <- sapply(1:length(plot_Qs), function (x){1-quantile(CDF[x,],0.95)})
-surv_upper_95 <- sapply(1:length(plot_Qs), function (x) {1-quantile(CDF[x,],0.025)})
+surv_upper_95 <- sapply(1:length(plot_Qs), function (x) {1-quantile(CDF[x,],0.05)})
 
 pdf("Discharge_90percent_Uncertainty_PDF.pdf",width =4.86,height =7.88)
 ################################################
@@ -159,7 +168,7 @@ lines(x=c(xmax,xmax),y=c(ymin,ymax))
 
 # Uncertainty boundaries
 polygon(x = c(plot_Qs,rev(plot_Qs)), 
-        y = c(upper_95, rev(lower_5)),
+        y = c(lower_5, rev(upper_95)),
         border = NA , col=myblue)
 
 # MLE PDF and samples PDF
@@ -170,7 +179,7 @@ lines(plot_Qs,mean_Bayes_Q,lty=1,col="blue",lwd=2)
 lines(pdf_sample_Q$x,pdf_sample_Q$y ,lty=2,col="green",lwd=2)
 # Legend
 legend(12000,ymax-ymax*0.01,
-       c("Frequentist max. likelihood","Posterior mean","Sampled discharge","90% C.I. uncertainty area","Observed annual maxima of discharge"),
+       c("Maximum likelihood (frequentist)","Posterior mean (Bayesian)","Sampled discharge","90% credible interval (uncertainty)","Observed annual maxima of discharge"),
        col = c('red','blue','green',myblue,'black'),
        pt.bg = c(NA,NA,NA, myblue,"white"),
        pch = c(NA,NA,NA, 22,22),
@@ -214,8 +223,8 @@ lines(x=c(xmax,xmax),y=c(ymin,ymax))
 
 # Uncertainty boundaries
 polygon(x = c(plot_Qs,rev(plot_Qs)), 
-        y = c(surv_upper_95,
-              rev(surv_lower_5)),
+        y = c(surv_lower_5,
+              rev(surv_upper_95)),
         border = NA , col=myblue)
 
 # MLE PDF
@@ -226,7 +235,7 @@ points(annu_Q_order,surv_annu_Q,pch=16)
 
 # Legend
 legend(12000,1.5,
-       c("Frequentist max. likelihood","Posterior mean","Sampled discharge","90% C.I. uncertainty area","Observed annual maxima of discharge"),
+       c("Maximum likelihood (frequentist)","Posterior mean (Bayesian)","Sampled discharge","90% credible interval (uncertainty)","Observed annual maxima of discharge"),
        col = c('red','blue','green',myblue,'black'),
        pt.bg = c(NA,NA,NA, myblue,"white"),
        pch = c(NA,NA,NA, 22,16),
