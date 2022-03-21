@@ -63,34 +63,6 @@ GEV_mle<-ci(fit, alpha = 0.05, type = c("parameter")) # From the fExtremes Packa
 
 save(GEV_mle,file="GEV_MLE.RData")
 
-####################################################################################################
-# Alternative Method: Maximum Likelihood without the extRemes Package
-####################################################################################################
-# Define the likelihood function (use the likelihood function from extRemes Package)
-llhd<-function(par,dat){
-  if(par[2]<=0){return(-1e10)}else{
-    loglik<-sum(devd(x=dat, loc = par[1], scale = par[2], shape = par[3], log = TRUE,
-             type = c("GEV")))  
-    if(loglik==-Inf){return(-1e10)}else{return(loglik)}
-  }
-}
-
-par.init<-c(0,1,2)
-llhd(par=par.init , dat=dat)
-
-optimOutput<-optim(par = par.init ,fn = llhd, dat=dat,  control=list(fnscale=-1),hessian=TRUE,
-                   method = "L-BFGS-B" , lower = c(-Inf,0,-Inf), upper = c(Inf,Inf,Inf))
-GEV_est<-optimOutput$par
-
-# Use the Delta method to construct the 95% confidence intervals
-fisher_info<-solve(-optimOutput$hessian)
-prop_sigma<-sqrt(diag(fisher_info))
-upper<-GEV_est+1.959964*prop_sigma
-lower<-GEV_est-1.959964*prop_sigma
-interval<-data.frame(value=GEV_est, upper=upper, lower=lower)
-round(interval,3)
-
-
 #######################################################################################################################################
 #######################################################################################################################################
 #######################################################################################################################################
@@ -190,14 +162,14 @@ hpd <- function(samp,p=0.05){
 }
 
 ######################################
-# bayesEstimator<-apply(mcmcSamples,2,function(x){c(mean(x), hpd(x))})
-# rownames(bayesEstimator)<-c("Posterior Mean" , "95%CI-Low", "95%CI-High")
-# # Results from Bayesian Approach (MCMC)
-# bayesEstimator
-# save(bayesEstimator,file="./GEV_Posterior_Mean.RData")
-# 
-# # Results from MLE Approach
-# GEV_mle
+bayesEstimator<-apply(mcmcSamples,2,function(x){c(mean(x), hpd(x))})
+rownames(bayesEstimator)<-c("Posterior Mean" , "95%CI-Low", "95%CI-High")
+# Results from Bayesian Approach (MCMC)
+bayesEstimator
+save(bayesEstimator,file="./GEV_Posterior_Mean.RData")
+
+# Results from MLE Approach
+GEV_mle
 
 # Comparative plots for the results
 library(evd)
@@ -220,12 +192,8 @@ plot(density(mcmcSamples[,2]), main="scale"); abline(v=GEV_params[2], col="red")
 plot(density(mcmcSamples[,3]), main="shape"); abline(v=GEV_params[3], col="red")
 
 n=1 # number of random discharge samples from each MCMC parameter set
-discharge_df<-as.data.frame(NULL)
-set.seed(1)
-for (i in 1:nrow(mcmcSamples)) {
-  discharge_df[i,1]<-revd(n,loc=mcmcSamples[i,1],scale=mcmcSamples[i,2],shape=mcmcSamples[i,3])
-  print(i)
-}
+discharge_df<-apply(mcmcSamples,1,function(x){revd(n,loc=x[1],scale=x[2],shape=x[3])})
+discharge_df<-as.data.frame(discharge_df)
 colnames(discharge_df)<-c('discharge_cms')
 save(discharge_df,file="./MCMC_Discharge_CMS.RData")
 #Taking random sample data from MCMC results
