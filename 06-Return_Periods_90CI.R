@@ -47,12 +47,12 @@ if("evd" %in% (.packages())){
   detach("package:evd", unload=TRUE)
 }
 library('DEoptim')
+library(evir)
 #--------------------------------------------------------------
 # Functions----------------------------------------------------
 
 ## function to estimate the return level from GEV distribution
 myreturnlevel <- function(t,mu,sigma,xi){
-  library(evir)
   x<-qgev(p=1-(1/t),xi=xi,mu=mu,sigma=sigma)
   return(x)
 }

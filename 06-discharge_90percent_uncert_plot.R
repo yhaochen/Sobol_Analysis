@@ -56,17 +56,9 @@ load("./GEV_Parameters_MCMC.RData") # MCMC parameter sets
 load('./Q_sample_A.RData') # sampled discharge data
 
 pdf_fun <- function(x,mu,sigma,xi){
-  library(evir)
   d<-dgev(x,mu=mu,sigma=sigma,xi=xi)
   return(d)
 }
-
-# # GEV CDF function
-# cdf_fun<- function(x,mu,sigma,xi) {
-#   if(xi!=0) t<-(1+xi*((x-mu)/sigma))^(-1/xi) else t<-exp(-(x-mu)/sigma)
-#   cd<-exp(-t)
-#   return(cd)
-# }
 
 # GEV CDF function
 cdf_fun<- function(x,mu,sigma,xi) {
