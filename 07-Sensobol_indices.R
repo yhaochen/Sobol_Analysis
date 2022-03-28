@@ -31,7 +31,25 @@ mat <- sobol_matrices(N = N, params = params,order=order,type="LHS"
 save(mat,file = './ensemble_uniform.RData')
 
 load('./GEV_Parameters.RData')
-load('./Q100_MCMC.RData')
+load('./MCMC_Discharge_CMS.RData')
+load('Q_sample_A.RData')
+load('./Q_sample_B.RData')
+
+# finding the pattern of matrices A and B for the discharge values
+a=mat[1,1] # first element of matrix A
+b=mat[(N+1),1] # first element of matrix B
+index_a<-(which(mat[,1]==a)-1)/N+1 # where matrix A is used
+index_b<-(which(mat[,1]==b)-1)/N+1 # where matrix B is used
+  #pattern
+pattern<-rep(NA,nrow(mat)/N)
+pattern[index_a]<-'A'
+pattern[index_b]<-'B'
+  # replacing matrices A and B values based on the pattern
+Q<-rep(NA,nrow(mat))
+for(i in 1:length(pattern)){
+  if(pattern[i]=="A") {Q[((i-1)*N+1):(i*N)]=Q_samp_A}
+  else {Q[((i-1)*N+1):(i*N)]=Q_samp_B}
+} 
 
 # from Maggie: function map between [0,1] and a bounded parameter range
 map_range <- function(x, bdin, bdout) {
@@ -39,14 +57,9 @@ map_range <- function(x, bdin, bdout) {
 }
 
 # parameter set
-set.seed(1)
-#mat[, "Q"] <- qevd(mat[, "Q"], loc=GEV_params[1],
-#                          scale=GEV_params[2],shape=GEV_params[3],type='GEV')
-      # systematic sampling from Q_100 MCMC data
-Q_samp <- 10^Q100_MCMC[seq(2,length(Q100_MCMC),by=floor(length(Q100_MCMC)/N))]
-#mat[, "Q"] <- 10^sample(Q100_MCMC,N)
-Qrange<-range(Q_samp)
-mat[, "Q"] <- map_range(Q_samp, c(Qrange),c(0,1))
+# set.seed(1)
+# Qrange<-range(Q_samp_A)
+# mat[, "Q"] <- map_range(Q_samp_A, c(Qrange),c(0,1))
 
 set.seed(2)
 mat[, "Z"] <- qtbeta(mat[, "Z"], alpha=5, beta=5, a=0, b=1)
@@ -70,7 +83,7 @@ save(mat,file = './ensemble.RData')
 
 #parameter sets for model run
 para<-mat
-para[,'Q']<-Q_samp
+para[,'Q']<-Q
 para[,'Z']<-map_range(para[,'Z'],c(0,1),c(-5,+5))
 para[,'W']<-map_range(para[,'W'],c(0,1),c(-0.1,+0.1))
 para[,'n_ch']<-map_range(para[,'n_ch'],c(0,1),c(0.02,0.2))
@@ -164,7 +177,11 @@ y_risk=table$mean.risk..USD.*table$n.damaged.houses
 
 
 plot_uncertainty(Y = y_risk, N = N) + labs(y = "Counts", x = "$y$")
+
+pdf("pairs_plot_risk.pdf",width =11, height =8.5)
 plot_scatter(data = mat, N = N, Y = y_risk, params = params)
+dev.off()
+
 plot_multiscatter(data = mat, N = N, Y = y_risk, params = params)
 
 
@@ -213,9 +230,59 @@ dev.off()
 
 ######################################################
 # calculation of sobol indices for hazard
-#params <- c("Q", "Z", "W", "n_ch", "n_fp", "DEM") # name of parameters
-#k <- length(params) # number of parameters
-y_haz=table$mean.hazard..m.*table$n.damaged.houses
+params <- c("Q", "Z", "W", "n_ch", "n_fp", "DEM") # name of parameters
+k <- length(params) # number of parameters
+N<-2000 # number of samples
+R <- 1e4 # number of bootstrap samples
+order<-"second"
+type <- "norm" # method to compute the confidence intervals of sobol indices
+conf <- 0.95 # confidence interval
+matrices=c("A", "B", "AB")
+#ensemble of parameters between 0 and 1
+set.seed(1)
+mat <- sobol_matrices(N = N, params = params,order=order,type="LHS"
+                      ,matrices = matrices)
+#                      ,matrices = c("A", "B", "AB", "BA"))
+save(mat,file = './ensemble_uniform_haz.RData')
+
+load('./Q100_MCMC.RData')
+# from Maggie: function map between [0,1] and a bounded parameter range
+map_range <- function(x, bdin, bdout) {
+  bdout[1] + (bdout[2] - bdout[1]) * ((x - bdin[1]) / (bdin[2] - bdin[1]))
+}
+
+# parameter set
+set.seed(1)
+# systematic sampling from MCMC data
+Q_samp <- Q100_MCMC[seq(2,length(Q100_MCMC),by=floor(length(Q100_MCMC)/N))]
+mat[, "Q"] <- 10^Q_samp
+Qrange<-range(Q_samp)
+mat[, "Q"] <- map_range(Q_samp, c(Qrange),c(0,1))
+
+set.seed(2)
+mat[, "Z"] <- qtbeta(mat[, "Z"], alpha=5, beta=5, a=0, b=1)
+
+set.seed(3)
+mat[, "W"] <- qtbeta(mat[, "W"], alpha = 5, beta = 5, a=0, b=1)
+
+set.seed(4)
+mat[, "n_ch"] <- qtnorm(mat[, "n_ch"], mean=(0.03-0.02)/(0.2-0.02), sd=0.5,a=0, b=1)
+
+set.seed(5)
+mat[, "n_fp"] <- qtnorm(mat[, "n_fp"], mean=(0.12-0.02)/(0.4-0.02), sd=0.5,a=0, b=1)
+
+
+save(mat,file = './ensemble_haz.RData')
+
+
+
+
+
+
+
+
+
+y_haz=table$n.damaged.houses
 ind <- sobol_indices(Y = y_haz, N = N, params = params, boot = T, R = R,
                      type = type, conf = conf,order = order,first = "saltelli")
 cols <- colnames(ind$results)[1:5]
@@ -226,6 +293,7 @@ write.csv(ind$results,"ind_totalHazard.csv")
 
 
 ind.dummy <- sobol_dummy(Y = y_haz, N = N, params = params, boot = TRUE, R = R)
+ind.dummy
 write.csv(ind.dummy,'./dummy_haz.csv')
 plot(ind, dummy = ind.dummy,order = "first")
 plot(ind, dummy = ind.dummy,order = "second")
