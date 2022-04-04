@@ -44,27 +44,36 @@ library("foreach")
 wd<-getwd()
 setwd(wd)
 
+# load model responses and parameter sets
 load('./model_response.RData')
 load('./parameter_set.RData')
 
+# create a folder for results
 if (dir.exists(paste0(wd, "/Outputs/Precalibration")) == F)
   dir.create(paste0(wd, "/Outputs/Precalibration"))
 
+# set a row number for parameter sets
 para<-data.frame(row_no=1:nrow(para),para)
+
+# download average daily discharge for the day of flooding at Sunbury
 discharge<-readNWISdv(
   siteNumbers = "01554000",
   parameterCd = "00060",
   startDate = "2011-09-08",
   endDate = "2011-09-08")
-discharge<-discharge[1,4]*0.3048^3
+discharge<-discharge[1,4]*0.3048^3 # convert to cms
 error<-0.06 # based on USGS individual discharge measurement maximum error from:
 # https://pubs.usgs.gov/of/1992/ofr92-144/#:~:text=The%20study%20indicates%20that%20standard,3%20percent%20to%206%20percent.
 
+# which runs have discharge values within the range of error?
 runs<-para[para[,'Q']>discharge*(1-error)]
 runs<-runs[runs[,'Q']<discharge*(1+error)]
 runs<-runs[,1]
 
+# shapefile for the Isle of Que
 Isle_of_Que<- readOGR("./Inputs/Isle_of_Que/Isle_of_Que.shp") # Isle of Que in Selinsgrove PA
+
+# extract flood extent maps for the Isle of Que and take the average of flood depth
 precalib_data<-data.frame()
 for(i in 1:length(runs)){
   flood_extent<-raster(paste0(wd,'/Outputs/Extent/run',runs[i],'.max'),format='ascii')
