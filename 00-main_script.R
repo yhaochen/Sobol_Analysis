@@ -53,23 +53,6 @@
 
 # Start the program here
 rm(list=ls()) #Just in case, remove any variable that is already loaded 
-graphics.off() #to make sure the user does not have an open figure
-use_prepared_data=TRUE
-if(use_prepared_data){
-  load_path='Pre_Generated_Output_Data'
-}else{
-  load_path='Output_Data'
-}
 
-# Create the folders for storing output data and figures
-tmp <- paste0(getwd(), "/Figures/")
-if(dir.exists(tmp)==F){dir.create(tmp, recursive=T)}
-
-tmp <- paste0(getwd(), "/Outputs/")
-if(dir.exists(tmp)==F){dir.create(tmp, recursive=T)}
-
-# Start running the functions 
-source('./.R') ## This script 
-print('Step1 DONE: ')
 
 
