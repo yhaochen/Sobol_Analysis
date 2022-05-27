@@ -33,7 +33,6 @@
 ## 2. To Run:
 ##      1. Click on Source button or, on console, type: Source("../../....R")
 ##==============================================================================
-library(FedData)
 library(rgdal)
 library(raster)
 
@@ -45,11 +44,12 @@ if (!is.null(wd))
 # Read Selinsgrove's boundaries shapefile
 clip_area <- readOGR("./Inputs/clip_area/clip_area.shp")
 
-# Download and save USGS 10m DEM for Selinsgrove
-dem <- get_ned(template = clip_area,
-               res = '13',
-               label = 'DEM')
+# Read the USGS 1/3 arcsec DEM for Selinsgrove
+dem <- raster('./Inputs/USGS_13_n41w077_20220429.tif')
 crs <- crs(clip_area)
+proj_clip_area<-spTransform(clip_area,crs(dem))
+dem <- crop(dem, extent(proj_clip_area))
+
 DEM10 <- projectRaster(dem, res = 10, crs = crs)
 DEM10 <- round(DEM10, digits = 2)
 DEM30 <- aggregate(DEM10, fact = 30 / 10, fun = mean)
