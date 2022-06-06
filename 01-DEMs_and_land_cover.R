@@ -44,7 +44,10 @@ if (!is.null(wd))
 # Read Selinsgrove's boundaries shapefile
 clip_area <- readOGR("./Inputs/clip_area/clip_area.shp")
 
-# Read the USGS 1/3 arcsec DEM for Selinsgrove
+# Download and read the USGS 1/3 arcsec DEM for Selinsgrove
+download.file(url='https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/historical/n41w077/USGS_13_n41w077_20220429.tif',
+              destfile = './Inputs/USGS_13_n41w077_20220429.tif',
+              mode = 'wb')
 dem <- raster('./Inputs/USGS_13_n41w077_20220429.tif')
 crs <- crs(clip_area)
 proj_clip_area<-spTransform(clip_area,crs(dem))
